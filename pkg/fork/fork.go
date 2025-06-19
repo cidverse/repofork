@@ -10,7 +10,7 @@ import (
 	"github.com/go-git/go-git/v6/config"
 )
 
-func UpdateFork(remote string, upstream string) error {
+func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string) error {
 	// create a temporary directory
 	tempDir, err := os.MkdirTemp("", "repofork-")
 	if err != nil {
@@ -52,10 +52,10 @@ func UpdateFork(remote string, upstream string) error {
 	}
 
 	// checkout main branch
-	if err = gitCommand(tempDir, "checkout", "-B", "main", "origin/main"); err != nil {
+	if err = gitCommand(tempDir, "checkout", "-B", "main", "origin/"+originBranch); err != nil {
 		return err
 	}
-	if err = gitCommand(tempDir, "branch", "--track", "upstream", "upstream/main"); err != nil {
+	if err = gitCommand(tempDir, "branch", "--track", "upstream", "upstream/"+upstreamBranch); err != nil {
 		return err
 	}
 
