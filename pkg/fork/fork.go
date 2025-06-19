@@ -9,7 +9,7 @@ import (
 	"github.com/go-git/go-git/v6/config"
 )
 
-func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string) error {
+func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string, fullRewrite bool, push bool) error {
 	originRef := "origin/" + originBranch
 	upstreamRef := "upstream/" + upstreamBranch
 
@@ -72,7 +72,7 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 	}
 
 	// cherry-pick
-	if lastSHA == "" {
+	if lastSHA == "" || fullRewrite {
 		slog.Info("No previous mirrored commit found — full rewrite")
 
 		if err = gitCommand(tempDir, "checkout", "-B", "main", upstreamRef); err != nil {
@@ -86,10 +86,15 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 			return fmt.Errorf("failed to checkout origin/main: %w", err)
 		}
 
-		// Cherry-pick new commits from upstream/main
-		if err = gitCommand(tempDir, "cherry-pick", lastSHA+".."+upstreamRef); err != nil {
-			return fmt.Errorf("failed to cherry-pick upstream changes: %w", err)
-		}
+		/*
+			// Cherry-pick new commits from upstream/main
+			if err = gitCommand(tempDir, "cherry-pick", lastSHA+".."+upstreamRef); err != nil {
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
+					slog.Info("No new upstream commits to cherry-pick")
+				}
+			}
+		*/
 	}
 
 	// filter repo history
@@ -116,9 +121,11 @@ else:
 	}
 
 	// push
-	//if err = gitCommand(tempDir, "push", "--force", "origin", "main"); err != nil {
-	//	return fmt.Errorf("failed to push changes to origin: %w", err)
-	//}
+	if push {
+		if err = gitCommand(tempDir, "push", "--force", "origin", "HEAD:"+originBranch); err != nil {
+			return fmt.Errorf("failed to push changes to origin:%s: %w", originBranch, err)
+		}
+	}
 
 	return nil
 }
