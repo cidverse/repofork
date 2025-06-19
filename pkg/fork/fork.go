@@ -55,9 +55,9 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 
 	// checkout main branch
 	lastSHA := ""
-	if g.RefExists(originRef) {
+	if g.RefExists("refs/remotes/" + originRef) {
 		if err = gitCommand(tempDir, "checkout", "-B", "main", originRef); err != nil {
-			return err
+			return fmt.Errorf("failed to checkout origin/%s: %w", originBranch, err)
 		}
 
 		// get last mirrored upstream commit SHA
@@ -66,9 +66,6 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 			return fmt.Errorf("failed to get last upstream commit: %w", err)
 		}
 		slog.Info("Last upstream commit SHA", "sha", lastSHA)
-	}
-	if err = gitCommand(tempDir, "branch", "--track", "upstream", upstreamRef); err != nil {
-		return err
 	}
 
 	// cherry-pick
@@ -80,11 +77,6 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 		}
 	} else {
 		slog.Info("Last mirrored upstream commit found", "sha", lastSHA)
-
-		// Create temp branch from last known upstream commit
-		if err = gitCommand(tempDir, "checkout", "-B", "main", originRef); err != nil {
-			return fmt.Errorf("failed to checkout origin/main: %w", err)
-		}
 
 		// cherry-pick commits
 		commits, err := g.CommitsBetween(lastSHA, upstreamRef)

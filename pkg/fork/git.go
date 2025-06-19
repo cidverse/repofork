@@ -11,8 +11,8 @@ type Git struct {
 	repoDir string
 }
 
-func (g *Git) RefExists(ref string) bool {
-	cmd := exec.Command("git", "rev-parse", "--verify", ref)
+func (g *Git) RefExists(fullRef string) bool {
+	cmd := exec.Command("git", "show-ref", "--verify", "--quiet", fullRef)
 	cmd.Dir = g.repoDir
 	return cmd.Run() == nil
 }
