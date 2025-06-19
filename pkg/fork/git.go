@@ -17,6 +17,17 @@ func (g *Git) RefExists(ref string) bool {
 	return cmd.Run() == nil
 }
 
+func (g *Git) IsMergeCommit(sha string) (bool, error) {
+	output, err := gitCommandOutput(g.repoDir, "rev-list", "--parents", "-n", "1", sha)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if commit %s is a merge: %w", sha, err)
+	}
+
+	// A merge commit has more than one parent (i.e., more than two fields: SHA + N parents)
+	fields := strings.Fields(string(output))
+	return len(fields) > 2, nil
+}
+
 func (g *Git) LastUpstreamCommit(ref string) (string, error) {
 	output, err := gitCommandOutput(g.repoDir, "log", ref, "--grep=Original-Upstream-Commit:", "-n", "1")
 	if err != nil {
@@ -30,6 +41,27 @@ func (g *Git) LastUpstreamCommit(ref string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func (g *Git) CommitsBetween(fromRef, toRef string) ([]string, error) {
+	// Format: git log --reverse --pretty=format:%H fromSHA..toRef
+	output, err := gitCommandOutput(
+		g.repoDir,
+		"log",
+		"--reverse",                           // chronological order
+		"--pretty=format:%H",                  // only commit hashes
+		fmt.Sprintf("%s..%s", fromRef, toRef), // range
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit list: %w", err)
+	}
+
+	commits := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(commits) == 1 && commits[0] == "" {
+		return []string{}, nil // no commits
+	}
+
+	return commits, nil
 }
 
 func NewGit(repoDir string) *Git {

@@ -86,15 +86,25 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 			return fmt.Errorf("failed to checkout origin/main: %w", err)
 		}
 
-		/*
-			// Cherry-pick new commits from upstream/main
-			if err = gitCommand(tempDir, "cherry-pick", lastSHA+".."+upstreamRef); err != nil {
-				var exitErr *exec.ExitError
-				if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
-					slog.Info("No new upstream commits to cherry-pick")
+		// cherry-pick commits
+		commits, err := g.CommitsBetween(lastSHA, upstreamRef)
+		if err != nil {
+			return fmt.Errorf("failed to get commits between %s and %s: %w", lastSHA, upstreamRef, err)
+		}
+		for _, sha := range commits {
+			slog.Info("Commit found", "sha", sha)
+
+			isMerge, _ := g.IsMergeCommit(sha)
+			if isMerge {
+				if err = gitCommand(tempDir, "cherry-pick", sha, "-m", "1"); err != nil { // parent 1 is the checked out branch when the merge was created, required for cherry-picking merge commits
+					return fmt.Errorf("failed to cherry-pick commit %s: %w", sha, err)
+				}
+			} else {
+				if err = gitCommand(tempDir, "cherry-pick", sha); err != nil {
+					return fmt.Errorf("failed to cherry-pick commit %s: %w", sha, err)
 				}
 			}
-		*/
+		}
 	}
 
 	// filter repo history
