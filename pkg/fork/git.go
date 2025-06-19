@@ -4,10 +4,32 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type Git struct {
 	repoDir string
+}
+
+func (g *Git) RefExists(ref string) bool {
+	cmd := exec.Command("git", "rev-parse", "--verify", ref)
+	cmd.Dir = g.repoDir
+	return cmd.Run() == nil
+}
+
+func (g *Git) LastUpstreamCommit(ref string) (string, error) {
+	output, err := gitCommandOutput(g.repoDir, "log", ref, "--grep=Original-Upstream-Commit:", "-n", "1")
+	if err != nil {
+		return "", fmt.Errorf("failed to get git log: %w", err)
+	}
+
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "    Original-Upstream-Commit:") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "    Original-Upstream-Commit:")), nil
+		}
+	}
+	return "", nil
 }
 
 func NewGit(repoDir string) *Git {

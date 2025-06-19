@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
 )
 
 func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string) error {
+	originRef := "origin/" + originBranch
+	upstreamRef := "upstream/" + upstreamBranch
+
 	// create a temporary directory
 	tempDir, err := os.MkdirTemp("", "repofork-")
 	if err != nil {
@@ -41,7 +43,7 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 	}
 
 	// fetch
-	_ = NewGit(tempDir)
+	g := NewGit(tempDir)
 	err = gitCommand(tempDir, "fetch", "origin")
 	if err != nil {
 		return err
@@ -52,37 +54,40 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 	}
 
 	// checkout main branch
-	if err = gitCommand(tempDir, "checkout", "-B", "main", "origin/"+originBranch); err != nil {
-		return err
-	}
-	if err = gitCommand(tempDir, "branch", "--track", "upstream", "upstream/"+upstreamBranch); err != nil {
-		return err
-	}
+	lastSHA := ""
+	if g.RefExists(originRef) {
+		if err = gitCommand(tempDir, "checkout", "-B", "main", originRef); err != nil {
+			return err
+		}
 
-	// get last mirrored upstream commit SHA
-	lastSHA, err := getLastUpstreamCommit(tempDir)
-	if err != nil {
-		return fmt.Errorf("failed to get last upstream commit: %w", err)
+		// get last mirrored upstream commit SHA
+		lastSHA, err = g.LastUpstreamCommit(originRef)
+		if err != nil {
+			return fmt.Errorf("failed to get last upstream commit: %w", err)
+		}
+		slog.Info("Last upstream commit SHA", "sha", lastSHA)
 	}
-	slog.Info("Last upstream commit SHA", "sha", lastSHA)
+	if err = gitCommand(tempDir, "branch", "--track", "upstream", upstreamRef); err != nil {
+		return err
+	}
 
 	// cherry-pick
 	if lastSHA == "" {
 		slog.Info("No previous mirrored commit found — full rewrite")
 
-		if err = gitCommand(tempDir, "checkout", "-B", "main", "upstream/main"); err != nil {
+		if err = gitCommand(tempDir, "checkout", "-B", "main", upstreamRef); err != nil {
 			return fmt.Errorf("failed to checkout upstream/main: %w", err)
 		}
 	} else {
 		slog.Info("Last mirrored upstream commit found", "sha", lastSHA)
 
 		// Create temp branch from last known upstream commit
-		if err = gitCommand(tempDir, "checkout", "-B", "main", "origin/main"); err != nil {
+		if err = gitCommand(tempDir, "checkout", "-B", "main", originRef); err != nil {
 			return fmt.Errorf("failed to checkout origin/main: %w", err)
 		}
 
 		// Cherry-pick new commits from upstream/main
-		if err = gitCommand(tempDir, "cherry-pick", lastSHA+"..upstream/main"); err != nil {
+		if err = gitCommand(tempDir, "cherry-pick", lastSHA+".."+upstreamRef); err != nil {
 			return fmt.Errorf("failed to cherry-pick upstream changes: %w", err)
 		}
 	}
@@ -116,19 +121,4 @@ else:
 	//}
 
 	return nil
-}
-
-func getLastUpstreamCommit(repoDir string) (string, error) {
-	output, err := gitCommandOutput(repoDir, "log", "origin/main", "--grep=Original-Upstream-Commit:", "-n", "1")
-	if err != nil {
-		return "", fmt.Errorf("failed to get git log: %w", err)
-	}
-
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "    Original-Upstream-Commit:") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "    Original-Upstream-Commit:")), nil
-		}
-	}
-	return "", nil
 }
