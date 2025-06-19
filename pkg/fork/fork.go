@@ -9,6 +9,9 @@ import (
 	"github.com/go-git/go-git/v6/config"
 )
 
+const tempBranchName = "repofork-temp"
+const workingBranchName = "main"
+
 func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string, fullRewrite bool, push bool) error {
 	originRef := "origin/" + originBranch
 	upstreamRef := "upstream/" + upstreamBranch
@@ -25,6 +28,7 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 	if err != nil {
 		return fmt.Errorf("failed to initialize git repository: %w", err)
 	}
+	g := NewGit(tempDir)
 
 	// add remotes
 	_, err = repo.CreateRemote(&config.RemoteConfig{
@@ -42,21 +46,15 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 		return fmt.Errorf("failed to create remote 'upstream': %w", err)
 	}
 
-	// fetch
-	g := NewGit(tempDir)
-	err = gitCommand(tempDir, "fetch", "origin")
-	if err != nil {
-		return err
-	}
-	err = gitCommand(tempDir, "fetch", "upstream")
-	if err != nil {
-		return err
+	// fetch remotes
+	if err = gitCommand(tempDir, "fetch", "--all"); err != nil {
+		return fmt.Errorf("failed to fetch remotes: %w", err)
 	}
 
 	// checkout main branch
 	lastSHA := ""
 	if g.RefExists("refs/remotes/" + originRef) {
-		if err = gitCommand(tempDir, "checkout", "-B", "main", originRef); err != nil {
+		if err = gitCommand(tempDir, "checkout", "-B", tempBranchName, originRef); err != nil {
 			return fmt.Errorf("failed to checkout origin/%s: %w", originBranch, err)
 		}
 
@@ -65,18 +63,21 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 		if err != nil {
 			return fmt.Errorf("failed to get last upstream commit: %w", err)
 		}
-		slog.Info("Last upstream commit SHA", "sha", lastSHA)
 	}
 
 	// cherry-pick
 	if lastSHA == "" || fullRewrite {
 		slog.Info("No previous mirrored commit found — full rewrite")
 
-		if err = gitCommand(tempDir, "checkout", "-B", "main", upstreamRef); err != nil {
+		if err = gitCommand(tempDir, "checkout", "-B", workingBranchName, upstreamRef); err != nil {
 			return fmt.Errorf("failed to checkout upstream/main: %w", err)
 		}
 	} else {
 		slog.Info("Last mirrored upstream commit found", "sha", lastSHA)
+
+		if err = gitCommand(tempDir, "checkout", "-B", workingBranchName, originRef); err != nil {
+			return fmt.Errorf("failed to checkout origin/%s: %w", originBranch, err)
+		}
 
 		// cherry-pick commits
 		commits, err := g.CommitsBetween(lastSHA, upstreamRef)
@@ -101,6 +102,7 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 
 	// filter repo history
 	err = gitCommand(tempDir, "filter-repo",
+		"--refs", workingBranchName,
 		"--commit-callback", `if b"Original-Upstream-Commit:" in commit.message:
 	commit.skip()
 else:
@@ -112,15 +114,6 @@ else:
 		"--path", ".gitlab/",
 		"--force",
 	)
-
-	// open after history rewrite
-	_, err = repo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{remote},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create remote 'origin': %w", err)
-	}
 
 	// push
 	if push {
