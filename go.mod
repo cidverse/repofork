@@ -4,7 +4,7 @@ go 1.24.4
 
 require (
 	github.com/cidverse/cidverseutils/zerologconfig v0.1.1
-	github.com/go-git/go-git/v6 v6.0.0-20250618100032-7bc22667c9e1
+	github.com/go-git/go-git/v6 v6.0.0-20250628104446-20c25df268c3
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 )
@@ -16,7 +16,7 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/go-git/gcfg/v2 v2.0.1 // indirect
+	github.com/go-git/gcfg/v2 v2.0.2 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
