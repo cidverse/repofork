@@ -9,12 +9,11 @@ import (
 )
 
 var cfg zerologconfig.LogConfig
-var configFile string
 
 func rootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  `repofork`,
-		Long: ``,
+		Long: `RepoFork makes it simple to keep a mirror repository in sync with an upstream project while stripping out unwanted files or directories in your fork (e.g. CI configs, internal tooling, etc.). It supports both initializing a new fork and incrementally updating an existing fork with only the new commits since your last sync.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			zerologconfig.Configure(cfg)
 		},
@@ -27,8 +26,8 @@ func rootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.LogLevel, "log-level", "info", "log level - allowed: "+strings.Join(zerologconfig.ValidLogLevels, ","))
 	cmd.PersistentFlags().StringVar(&cfg.LogFormat, "log-format", "color", "log format - allowed: "+strings.Join(zerologconfig.ValidLogFormats, ","))
 	cmd.PersistentFlags().BoolVar(&cfg.LogCaller, "log-caller", false, "include caller in log functions")
-	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 
+	cmd.AddCommand(runCmd())
 	cmd.AddCommand(updateCmd())
 	cmd.AddCommand(versionCmd())
 

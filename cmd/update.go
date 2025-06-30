@@ -21,7 +21,7 @@ func updateCmd() *cobra.Command {
 			push, _ := cmd.Flags().GetBool("push")
 			slog.With("origin", origin).With("upstream", upstream).Info("update fork")
 
-			err := fork.UpdateFork(origin, originBranch, upstream, upstreamBranch, fullRewrite, push)
+			err := fork.UpdateFork(origin, originBranch, upstream, upstreamBranch, fullRewrite, push, nil)
 			if err != nil {
 				slog.Error("failed to update fork", "error", err)
 				return

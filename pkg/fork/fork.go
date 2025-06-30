@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
@@ -12,7 +13,7 @@ import (
 const tempBranchName = "repofork-temp"
 const workingBranchName = "main"
 
-func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string, fullRewrite bool, push bool) error {
+func UpdateFork(remote string, originBranch string, upstream string, upstreamBranch string, fullRewrite bool, push bool, excludePaths []string) error {
 	originRef := "origin/" + originBranch
 	upstreamRef := "upstream/" + upstreamBranch
 
@@ -101,17 +102,18 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 	}
 
 	// filter repo history
+	var filterRepoExcludeArgs = []string{"--invert-paths"}
+	for _, path := range excludePaths {
+		filterRepoExcludeArgs = append(filterRepoExcludeArgs, "--path", path)
+	}
+
 	err = gitCommand(tempDir, "filter-repo",
 		"--refs", workingBranchName,
 		"--commit-callback", `if b"Original-Upstream-Commit:" in commit.message:
 	commit.skip()
 else:
 	commit.message += b"\nOriginal-Upstream-Commit: " + commit.original_id`,
-		"--invert-paths",
-		"--path", ".github/workflows/",
-		"--path", ".gitlab-ci.yml",
-		"--path", ".github/",
-		"--path", ".gitlab/",
+		strings.Join(filterRepoExcludeArgs, " "),
 		"--force",
 	)
 
