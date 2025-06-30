@@ -89,11 +89,11 @@ func UpdateFork(remote string, originBranch string, upstream string, upstreamBra
 
 			isMerge, _ := g.IsMergeCommit(sha)
 			if isMerge {
-				if err = gitCommand(tempDir, "cherry-pick", sha, "-m", "1"); err != nil { // parent 1 is the checked out branch when the merge was created, required for cherry-picking merge commits
+				if err = gitCommand(tempDir, "cherry-pick", sha, "-m", "1", "--allow-empty"); err != nil { // parent 1 is the checked out branch when the merge was created, required for cherry-picking merge commits
 					return fmt.Errorf("failed to cherry-pick commit %s: %w", sha, err)
 				}
 			} else {
-				if err = gitCommand(tempDir, "cherry-pick", sha); err != nil {
+				if err = gitCommand(tempDir, "cherry-pick", sha, "--allow-empty"); err != nil {
 					return fmt.Errorf("failed to cherry-pick commit %s: %w", sha, err)
 				}
 			}
