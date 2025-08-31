@@ -4,7 +4,7 @@ go 1.24.3
 
 require (
 	github.com/cidverse/cidverseutils/zerologconfig v0.1.1
-	github.com/go-git/go-git/v6 v6.0.0-20250819122726-39261590f7f3
+	github.com/go-git/go-git/v6 v6.0.0-20250831162718-34f273445e00
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -21,7 +21,7 @@ require (
 	github.com/go-git/go-billy/v6 v6.0.0-20250627091229-31e2a16eef30 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/kevinburke/ssh_config v1.2.0 // indirect
+	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
