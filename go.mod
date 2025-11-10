@@ -4,7 +4,7 @@ go 1.24.3
 
 require (
 	github.com/cidverse/cidverseutils/zerologconfig v0.1.1
-	github.com/go-git/go-git/v6 v6.0.0-20251021092831-91c33c9361ce
+	github.com/go-git/go-git/v6 v6.0.0-20251110163320-5f1404eb0320
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.10.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -17,7 +17,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.5.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg/v2 v2.0.2 // indirect
-	github.com/go-git/go-billy/v6 v6.0.0-20251016063423-4289a4e54aa4 // indirect
+	github.com/go-git/go-billy/v6 v6.0.0-20251022185412-61e52df296a5 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
@@ -30,5 +30,5 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 )
