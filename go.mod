@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/cidverse/cidverseutils/zerologconfig v0.1.1
 	github.com/go-git/go-git/v6 v6.0.0-20251224103503-78aff6aa5ea9
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.0
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
